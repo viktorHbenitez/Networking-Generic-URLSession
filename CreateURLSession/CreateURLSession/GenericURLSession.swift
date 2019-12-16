@@ -120,15 +120,17 @@ class GenericURLSession: NSObject {
       
       
       do{
-        if let strResponse = String.init(data: data, encoding: .utf8){
-          print("RESPONSE JSON : %@", strResponse)
+        if let strResponse = String.init(data: data, encoding: .ascii){
+          print("Response format URL", strResponse)
         }
         
-        guard let parseData = try JSONSerialization.jsonObject(with: data, options: []) as? JSONArryDictionary else {
-          return completion(nil, NSError(domain: "parseData", code: -10012 , userInfo: nil))
+        if let dataResponse = String.init(data: data, encoding: .ascii)?.data(using: .utf8){
+          guard let parseData = try JSONSerialization.jsonObject(with: dataResponse, options: .mutableContainers) as? JSONArryDictionary else {
+            return completion(nil, NSError(domain: "parseData", code: -10012 , userInfo: nil))
+          }
+          
+          completion(parseData, NSError(domain: "BD.ResponseSession", code: 0, userInfo: nil))
         }
-        
-        completion(parseData, NSError(domain: "BD.ResponseSession", code: 0, userInfo: nil))
         
       }catch let error{
         completion(nil, error as NSError)
