@@ -54,13 +54,11 @@ class SecondService_WS: GenericURLSession{
     
     for objt in dctResponse{
       
-      if let strUserName = objt["username"] as? String{
+      if let strUserName = objt["clave_institucion"] as? Int{
         print("username", strUserName)
       }
       
     }
-    
-    
     
     return nil
     
