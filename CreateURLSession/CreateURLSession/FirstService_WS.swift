@@ -9,6 +9,67 @@
 import UIKit
 
 
+class SecondService_WS: GenericURLSession{
+  
+  
+  private let URL_Request = "https://jsonplaceholder.typicode.com/users"
+  
+
+  typealias CompletionBlock = (Dummy?, NSError?) -> Void
+  
+  
+  override init() {
+    super.init()
+    pathURL = URL_Request
+  }
+  
+  func executeService(hadler : @escaping CompletionBlock){
+    
+    DispatchQueue.global().async {
+      
+      // invoke request method
+      self.requestService { (dctResponse, error) in
+      
+        DispatchQueue.main.async {
+          if let error = error{
+            if error.code == 0{
+              hadler(self.parseobjects(dctResponse), error)
+            }
+            else{
+              hadler(nil, error)
+            }
+            
+          }
+          
+        }
+      }
+    }
+    
+  }
+  
+  
+  func parseobjects( _ dctResponse : [[String : Any]]?) -> Dummy?{
+    
+    guard let dctResponse = dctResponse else {return nil}
+    
+    for objt in dctResponse{
+      
+      if let strUserName = objt["username"] as? String{
+        print("username", strUserName)
+      }
+      
+    }
+    
+    
+    
+    return nil
+    
+  }
+  
+  
+}
+
+
 
 
 class FirstService_WS: GenericURLSession {
@@ -34,7 +95,7 @@ class FirstService_WS: GenericURLSession {
         DispatchQueue.main.async {  // Main thread
           if let error = error {
             if error.code == 0{
-              hadler(self.parseObjs(dctResponse), error)
+              hadler(nil, error)
             }
             else{
               hadler(nil, error)
@@ -62,6 +123,10 @@ class FirstService_WS: GenericURLSession {
     print("parseObjs")
     return dummy
     
+  }
+  
+  deinit {
+    print("OS Reclaming memory for FirstService_WS - NO Retain Cycle / Leak!")
   }
 }
 

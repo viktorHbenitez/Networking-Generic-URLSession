@@ -12,29 +12,22 @@ class GenericURLSession: NSObject {
   let strBaseCoDiURL = ""
   var pathURL : String?
   
+  // MARK: - Type Alias
+  typealias JSONDictionary = [String : Any]
+  typealias JSONArryDictionary = [[String : Any]]
   
-  //    postService( []){
-  //    [unowned self](data, error) in
-  //
-  //    error == nil {
-  //
-  //    }
-  //    self.funcionque transforma a modelo de ne(data)
-  //    Dispa
-  //    }
-
-  typealias Handler = ( [String : Any]? , NSError?) -> Void
+  typealias QueryDictResult   = ([String : Any]? , NSError?) -> Void
+  typealias QueryArrayResult  = ([[String : Any]]?, NSError?) -> Void
   
-  func postService(with dctRequest : [String : Any]? , completion: @escaping Handler){
-    
+  
+  func postService(with dctRequest : [String : Any]? ,
+                   completion: @escaping QueryDictResult){
     
     // Create a configurations session
     let configurationSession = URLSessionConfiguration.default
     
-    
     // Create a session
-    let session = URLSession(configuration: configurationSession, delegate: nil, delegateQueue: nil)
-    //      let session = URLSession(configuration: configurationSession, delegate: self, delegateQueue: OperationQueue.ma)
+    let session = URLSession(configuration: configurationSession)
     
     /**
      Create the URL for the request
@@ -59,25 +52,23 @@ class GenericURLSession: NSObject {
     let task = session.dataTask(with: request) {data, response, error in
       
       if error != nil{
+        completion(nil, NSError(domain: error.debugDescription, code: -10011, userInfo: nil))
         return
       }
       
       guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-//        print("httpResponse Error", (response as? HTTPURLResponse)?.statusCode)
+        completion(nil, NSError(domain: "Error HTTP Response", code:  (response as? HTTPURLResponse)?.statusCode ?? -1001, userInfo: nil))
         return
       }
       
-      
       guard let data = data else { return
-//        completion(nil, NSError(domain: "dataNilError", code: -10011, userInfo: nil))
-        print(" data error.debugDescription", error.debugDescription)
+        completion(nil, NSError(domain: "dataNilError", code: -10011, userInfo: nil))
       }
       
       
       do{
-        guard let parseData = try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String: Any] else {
+        guard let parseData = try JSONSerialization.jsonObject(with: data, options: []) as? JSONDictionary else {
           return completion(nil, NSError(domain: "parseData", code: -10012 , userInfo: nil))
-          
         }
         
         if let strResponse = String.init(data: data, encoding: .utf8){
@@ -92,6 +83,61 @@ class GenericURLSession: NSObject {
     }
     task.resume()
   }
+  
+  
+  
+  func requestService(completion: @escaping QueryArrayResult){
+    
+    // Create a configurations session
+    let configurationSession = URLSessionConfiguration.default
+    
+    // Create a session
+    let session = URLSession(configuration: configurationSession)
+    
+    /**
+     Create the URL for the request
+     Setup the URL
+     */
+    guard let pathURL = pathURL, let url = URL(string: String(format: "%@%@", strBaseCoDiURL, pathURL))
+      else { return completion(nil, NSError(domain: "DdataNilError", code: -10001 , userInfo: nil)) }
+    
+    // Create Data Task
+    let task = session.dataTask(with: url) { data, response, error in
+      
+      if error != nil{
+        completion(nil, NSError(domain: error.debugDescription, code: -10011, userInfo: nil))
+        return
+      }
+      
+      guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        completion(nil, NSError(domain: "Error HTTP Response", code:  (response as? HTTPURLResponse)?.statusCode ?? -1001, userInfo: nil))
+        return
+      }
+      
+      guard let data = data else { return
+        completion(nil, NSError(domain: "dataNilError", code: -10011, userInfo: nil))
+      }
+      
+      
+      do{
+        if let strResponse = String.init(data: data, encoding: .utf8){
+          print("RESPONSE JSON : %@", strResponse)
+        }
+        
+        guard let parseData = try JSONSerialization.jsonObject(with: data, options: []) as? JSONArryDictionary else {
+          return completion(nil, NSError(domain: "parseData", code: -10012 , userInfo: nil))
+        }
+        
+        completion(parseData, NSError(domain: "BD.ResponseSession", code: 0, userInfo: nil))
+        
+      }catch let error{
+        completion(nil, error as NSError)
+      }
+    }
+    
+    task.resume()
+  }
+  
   
 }
 
